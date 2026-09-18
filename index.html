@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>สุ่มใบหน้านักเรียน</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@500;600;700&family=Bai+Jamjuree:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --stage: #0b1220;
+    --stage-2: #121a2b;
+    --panel: #17203399;
+    --edge: #2a3550;
+    --ink: #f5f3ee;
+    --ink-dim: #9aa4bb;
+    --amber: #ffb020;
+    --amber-dim: #7a5416;
+    --teal: #4fd1c5;
+    --teal-dim: #1c4640;
+    --danger: #ff6b6b;
+    --bg: #eef0f4;
+    --card-bg: #ffffff;
+    --card-border: #dfe3ec;
+    --shadow: 0 20px 50px -20px rgba(15,20,35,0.35);
+    --radius: 18px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0b0e16;
+      --card-bg:#141a26;
+      --card-border:#232c40;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0b0e16;
+    --card-bg:#141a26;
+    --card-border:#232c40;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    font-family:'Bai Jamjuree','Sarabun',system-ui,sans-serif;
+    color:#1c2333;
+    min-height:100vh;
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+    padding:28px 16px 60px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]) body{ color:var(--ink); }
+  }
+  :root[data-theme="dark"] body{ color:var(--ink); }
+
+  .app{
+    width:100%;
+    max-width:860px;
+    background:var(--card-bg);
+    border:1px solid var(--card-border);
+    border-radius:24px;
+    box-shadow:var(--shadow);
+    overflow:hidden;
+  }
+
+  header{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:18px 22px;
+    border-bottom:1px solid var(--card-border);
+  }
+  .mark{
+    width:38px;height:38px;border-radius:11px;
+    background:linear-gradient(160deg,var(--amber),#ff8a3d);
+    display:flex;align-items:center;justify-content:center;
+    font-size:19px; flex:none;
+  }
+  header h1{
+    font-family:'Kanit',sans-serif;
+    font-weight:600;
+    font-size:19px;
+    margin:0;
+    letter-spacing:0.2px;
+  }
+  header p{
+    margin:1px 0 0;
+    font-size:12.5px;
+    color:var(--ink-dim,#7a839c);
+  }
+  header .spacer{flex:1;}
+  .ghost-btn{
+    border:1px solid var(--card-border);
+    background:transparent;
+    color:inherit;
+    font-family:inherit;
+    font-size:13px;
+    padding:8px 14px;
+    border-radius:999px;
+    cursor:pointer;
+    display:flex;align-items:center;gap:6px;
+    transition:border-color .15s, transform .1s;
+  }
+  .ghost-btn:hover{border-color:var(--amber);}
+  .ghost-btn:active{transform:scale(0.97);}
+
+  /* ---------- STAGE ---------- */
+  .stage-wrap{
+    padding:18px 18px 0;
+  }
+  .stage{
+    position:relative;
+    width:100%;
+    aspect-ratio:16/10;
+    background:
+      radial-gradient(120% 90% at 50% -10%, #1c2740 0%, var(--stage) 55%);
+    border-radius:16px;
+    overflow:hidden;
+    border:1px solid #24304a;
+  }
+  .stage video{
+    position:absolute; inset:0;
+    width:100%; height:100%;
+    object-fit:cover;
+    transform:scaleX(1);
+  }
+  .stage.mirror video{ transform:scaleX(-1); }
+  .stage canvas{
+    position:absolute; inset:0;
+    width:100%; height:100%;
+  }
+  .stage-empty{
+    position:absolute; inset:0;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:12px; color:#7d88a3; text-align:center; padding:20px;
+  }
+  .stage-empty .cam-ico{
+    width:56px;height:56px;border-radius:16px;
+    background:#1a2338; border:1px solid #2a3550;
+    display:flex;align-items:center;justify-content:center;
+    font-size:24px;
+  }
+  .stage-empty b{color:#c6cde0; font-weight:600; font-size:14.5px;}
+  .stage-empty span{font-size:12.5px; max-width:280px; line-height:1.5;}
+
+  .badge-count{
+    position:absolute; top:12px; right:12px;
+    background:#0b1220cc; backdrop-filter:blur(6px);
+    border:1px solid #2a3550; color:var(--ink);
+    font-size:12.5px; padding:7px 12px; border-radius:999px;
+    display:flex; align-items:center; gap:6px;
+    font-family:'Kanit',sans-serif; z-index:5;
+  }
+  .badge-count b{ color:var(--amber); font-weight:600; }
+
+  .hint-pill{
+    position:absolute; bottom:12px; left:50%; transform:translateX(-50%);
+    background:#0b1220cc; backdrop-filter:blur(6px);
+    border:1px solid #2a3550; color:#c6cde0;
+    font-size:12px; padding:7px 14px; border-radius:999px;
+    z-index:5; white-space:nowrap;
+  }
+
+  /* reveal overlay */
+  .reveal{
+    position:absolute; inset:0; z-index:20;
+    display:flex; align-items:center; justify-content:center;
+    background:radial-gradient(60% 60% at 50% 45%, rgba(255,176,32,0.16), rgba(6,9,16,0.72) 70%);
+    opacity:0; pointer-events:none;
+    transition:opacity .25s ease;
+  }
+  .reveal.show{ opacity:1; pointer-events:auto; }
+  .reveal-card{
+    background:#0e1524ee;
+    border:1px solid var(--amber);
+    box-shadow:0 0 0 1px rgba(255,176,32,0.15), 0 30px 60px -20px rgba(255,176,32,0.35);
+    border-radius:20px;
+    padding:22px 34px;
+    text-align:center;
+    transform:scale(0.85);
+    transition:transform .3s cubic-bezier(.2,1.4,.4,1);
+  }
+  .reveal.show .reveal-card{ transform:scale(1); }
+  .reveal-card .tag{
+    font-size:12px; color:var(--amber); letter-spacing:0.4px; font-family:'Kanit',sans-serif;
+  }
+  .reveal-card .num{
+    font-family:'Kanit',sans-serif; font-weight:700;
+    font-size:44px; color:#fff; margin:6px 0 2px; line-height:1;
+  }
+  .reveal-card .name{
+    font-size:15px; color:#d6dcee;
+  }
+  .reveal-card .again{
+    margin-top:16px;
+    background:var(--amber); color:#26170a; border:none;
+    font-family:'Kanit',sans-serif; font-weight:600; font-size:13.5px;
+    padding:9px 18px; border-radius:999px; cursor:pointer;
+  }
+
+  /* marker dot */
+  .dot-label{
+    font-family:'Kanit',sans-serif; font-weight:600; font-size:12px;
+    fill:#0b1220;
+  }
+
+  /* ---------- CONTROLS ---------- */
+  .controls{
+    padding:16px 18px 6px;
+    display:flex; flex-wrap:wrap; gap:8px; align-items:center;
+  }
+  .btn{
+    font-family:'Kanit',sans-serif;
+    font-weight:500;
+    font-size:13.5px;
+    padding:10px 16px;
+    border-radius:11px;
+    border:1px solid var(--card-border);
+    background:transparent;
+    color:inherit;
+    cursor:pointer;
+    display:flex; align-items:center; gap:7px;
+    transition:transform .1s, border-color .15s, background .15s;
+    white-space:nowrap;
+  }
+  .btn:hover{ border-color:var(--amber); }
+  .btn:active{ transform:scale(0.97); }
+  .btn:disabled{ opacity:0.4; cursor:not-allowed; }
+  .btn:disabled:hover{ border-color:var(--card-border); }
+  .btn-primary{
+    background:var(--amber); border-color:var(--amber); color:#26170a;
+  }
+  .btn-primary:hover{ border-color:#ffbf47; }
+  .btn-solid{
+    background:#1c2740; border-color:#2a3550; color:var(--ink);
+  }
+  :root:not([data-theme="dark"]) .btn-solid{
+    background:#1c2740; color:#f5f3ee;
+  }
+  .btn-danger-outline{ color:var(--danger); border-color:#4a2a2a; }
+  .btn-danger-outline:hover{ border-color:var(--danger); }
+  .btn .grow{flex:1;}
+  .spacer-flex{flex:1 1 auto; min-width:8px;}
+
+  .row-right{ margin-left:auto; display:flex; gap:8px; align-items:center;}
+
+  /* sliders */
+  .sliders{
+    padding:6px 18px 20px;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+  }
+  @media (max-width:560px){
+    .sliders{ grid-template-columns:1fr; }
+  }
+  .slider-box{
+    background:var(--panel, #f4f5f8);
+    border:1px solid var(--card-border);
+    border-radius:14px;
+    padding:12px 14px;
+  }
+  :root:not([data-theme="dark"]) .slider-box{ background:#f4f5f8; }
+  .slider-box .top{
+    display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px;
+  }
+  .slider-box .top .lbl{
+    font-size:12.5px; color:var(--ink-dim,#6b7383); display:flex; align-items:center; gap:6px;
+  }
+  .slider-box .top .val{
+    font-family:'Kanit',sans-serif; font-weight:600; font-size:13px; color:var(--amber);
+  }
+  input[type=range]{
+    -webkit-appearance:none; width:100%; height:4px; border-radius:2px;
+    background:linear-gradient(90deg,var(--amber) 0%, var(--amber) var(--fill,50%), #37415a var(--fill,50%), #37415a 100%);
+    outline:none;
+  }
+  :root:not([data-theme="dark"]) input[type=range]{
+    background:linear-gradient(90deg,var(--amber) 0%, var(--amber) var(--fill,50%), #d7dbe6 var(--fill,50%), #d7dbe6 100%);
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none; width:17px; height:17px; border-radius:50%;
+    background:#fff; border:3px solid var(--amber); cursor:pointer; margin-top:0;
+  }
+  input[type=range]::-moz-range-thumb{
+    width:11px; height:11px; border-radius:50%;
+    background:#fff; border:3px solid var(--amber); cursor:pointer;
+  }
+
+  footer{
+    padding:14px 22px 20px;
+    font-size:11.5px;
+    color:var(--ink-dim,#8a93a6);
+    text-align:center;
+    border-top:1px solid var(--card-border);
+  }
+
+  /* fullscreen mode */
+  .stage-wrap.fs{
+    position:fixed; inset:0; z-index:9999; padding:0; background:#000;
+  }
+  .stage-wrap.fs .stage{ height:100%; border-radius:0; border:none; aspect-ratio:auto; }
+  .app.fs-hide-rest .controls,
+  .app.fs-hide-rest .sliders,
+  .app.fs-hide-rest header,
+  .app.fs-hide-rest footer{ display:none; }
+  .app.fs-hide-rest{ background:transparent; border:none; box-shadow:none; }
+
+  .exit-fs{
+    position:absolute; top:12px; left:12px; z-index:6;
+  }
+
+  /* modal */
+  .modal-back{
+    position:fixed; inset:0; background:rgba(8,10,16,0.55); backdrop-filter:blur(2px);
+    display:none; align-items:center; justify-content:center; z-index:99; padding:20px;
+  }
+  .modal-back.show{ display:flex; }
+  .modal{
+    background:var(--card-bg); border:1px solid var(--card-border);
+    border-radius:18px; max-width:420px; width:100%; padding:22px;
+    box-shadow:var(--shadow);
+  }
+  .modal h2{
+    font-family:'Kanit',sans-serif; font-size:17px; margin:0 0 12px;
+  }
+  .modal ol{ margin:0 0 16px; padding-left:20px; font-size:13.5px; line-height:1.9; }
+  .modal ol li b{ color:var(--amber); }
+  .modal .close-modal{
+    width:100%; padding:10px; border-radius:10px; border:none;
+    background:var(--amber); color:#26170a; font-family:'Kanit',sans-serif;
+    font-weight:600; cursor:pointer; font-size:13.5px;
+  }
+
+  .toast{
+    position:fixed; bottom:22px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:#171f30; color:#f5f3ee; border:1px solid #2a3550;
+    padding:10px 18px; border-radius:999px; font-size:13px; z-index:200;
+    opacity:0; pointer-events:none; transition:opacity .2s, transform .2s;
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  svg{ display:block; }
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+
+  <header>
+    <div class="mark">🎯</div>
+    <div>
+      <h1>สุ่มใบหน้านักเรียน</h1>
+      <p>เปิดกล้อง แตะทำเครื่องหมายที่ใบหน้าแต่ละคน แล้วสุ่มเลือกได้เลย</p>
+    </div>
+    <div class="spacer"></div>
+    <button class="ghost-btn" id="helpBtn">❓ วิธีใช้งาน</button>
+  </header>
+
+  <div class="stage-wrap" id="stageWrap">
+    <div class="stage mirror" id="stage">
+      <video id="video" playsinline autoplay muted></video>
+      <canvas id="canvas"></canvas>
+
+      <div class="stage-empty" id="stageEmpty">
+        <div class="cam-ico">📷</div>
+        <b>อนุญาตการใช้กล้องเพื่อเริ่มทำเครื่องหมายใบหน้า</b>
+        <span>กดปุ่ม "เปิดกล้อง" ด้านล่าง จากนั้นแตะบนใบหน้านักเรียนแต่ละคนในภาพเพื่อทำเครื่องหมาย</span>
+      </div>
+
+      <button class="ghost-btn exit-fs" id="exitFsBtn" style="display:none;">✕ ออกจากเต็มจอ</button>
+
+      <div class="badge-count" id="badgeCount" style="display:none;">
+        😀 พบล่าสุด <b id="faceCountLbl">0</b> ใบหน้า
+      </div>
+
+      <div class="hint-pill" id="hintPill" style="display:none;">แตะบนวิดีโอเพื่อทำเครื่องหมายใบหน้า</div>
+
+      <div class="reveal" id="reveal">
+        <div class="reveal-card">
+          <div class="tag">ผู้ถูกเลือก</div>
+          <div class="num" id="revealNum">#1</div>
+          <div class="name" id="revealName">นักเรียนคนที่ 1</div>
+          <button class="again" id="againBtn">สุ่มอีกครั้ง</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="btn btn-solid" id="fsBtn">⤢ เต็มจอ</button>
+    <button class="btn btn-primary" id="camBtn">🎥 เปิดกล้อง</button>
+    <button class="btn btn-solid" id="switchBtn" disabled>🔄 สลับกล้อง</button>
+    <button class="btn btn-danger-outline" id="clearBtn" disabled>🗑️ ล้างเครื่องหมาย</button>
+    <div class="row-right">
+      <button class="btn btn-primary" id="startBtn" style="background:#1fae74;border-color:#1fae74;color:#08241a;" disabled>✨ เริ่มสุ่ม</button>
+    </div>
+  </div>
+
+  <div class="sliders">
+    <div class="slider-box">
+      <div class="top">
+        <span class="lbl">⚡ ความเร็ว (สลับเร็ว-ช้า)</span>
+        <span class="val" id="speedVal">90 ms</span>
+      </div>
+      <input type="range" id="speedSlider" min="40" max="300" step="10" value="90">
+    </div>
+    <div class="slider-box">
+      <div class="top">
+        <span class="lbl">⏱️ เวลาสุ่มก่อนหยุด</span>
+        <span class="val" id="durVal">3.0 s</span>
+      </div>
+      <input type="range" id="durSlider" min="10" max="60" step="1" value="30">
+    </div>
+  </div>
+
+  <footer>ภาพจากกล้องประมวลผลอยู่ในเบราว์เซอร์ของคุณเท่านั้น ไม่มีการส่งวิดีโอออกไปที่ใด</footer>
+</div>
+
+<div class="modal-back" id="modalBack">
+  <div class="modal">
+    <h2>วิธีใช้งาน</h2>
+    <ol>
+      <li>กด <b>“เปิดกล้อง”</b> แล้วอนุญาตให้เว็บไซต์ใช้กล้อง</li>
+      <li><b>แตะที่ใบหน้า</b> ของนักเรียนแต่ละคนบนภาพ เพื่อสร้างจุดทำเครื่องหมาย (แตะซ้ำที่จุดเดิมเพื่อลบ)</li>
+      <li>ปรับ <b>ความเร็ว</b> และ <b>เวลาสุ่ม</b> ได้ตามต้องการ</li>
+      <li>กด <b>“เริ่มสุ่ม”</b> ระบบจะสุ่มไล่ไฟไปตามจุดที่ทำเครื่องหมายไว้ แล้วหยุดที่คนถูกเลือก</li>
+    </ol>
+    <button class="close-modal" id="closeModal">เข้าใจแล้ว</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  const video = document.getElementById('video');
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  const stage = document.getElementById('stage');
+  const stageWrap = document.getElementById('stageWrap');
+  const stageEmpty = document.getElementById('stageEmpty');
+  const app = document.getElementById('app');
+  const camBtn = document.getElementById('camBtn');
+  const switchBtn = document.getElementById('switchBtn');
+  const clearBtn = document.getElementById('clearBtn');
+  const startBtn = document.getElementById('startBtn');
+  const fsBtn = document.getElementById('fsBtn');
+  const exitFsBtn = document.getElementById('exitFsBtn');
+  const badgeCount = document.getElementById('badgeCount');
+  const faceCountLbl = document.getElementById('faceCountLbl');
+  const hintPill = document.getElementById('hintPill');
+  const speedSlider = document.getElementById('speedSlider');
+  const durSlider = document.getElementById('durSlider');
+  const speedVal = document.getElementById('speedVal');
+  const durVal = document.getElementById('durVal');
+  const reveal = document.getElementById('reveal');
+  const revealNum = document.getElementById('revealNum');
+  const revealName = document.getElementById('revealName');
+  const againBtn = document.getElementById('againBtn');
+  const helpBtn = document.getElementById('helpBtn');
+  const closeModal = document.getElementById('closeModal');
+  const modalBack = document.getElementById('modalBack');
+  const toastEl = document.getElementById('toast');
+
+  let stream = null;
+  let facingMode = 'user';
+  let markers = []; // {x,y} in fraction 0..1 of displayed (mirrored) space
+  let cameraOn = false;
+  let isFullscreen = false;
+  let spinTimer = null;
+  let spinTimeout = null;
+  let highlightIndex = -1;
+
+  function toast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(toastEl._t);
+    toastEl._t = setTimeout(()=>toastEl.classList.remove('show'), 2200);
+  }
+
+  function updateSliderFill(el){
+    const min = +el.min, max = +el.max, v = +el.value;
+    const pct = ((v-min)/(max-min))*100;
+    el.style.setProperty('--fill', pct+'%');
+  }
+  [speedSlider, durSlider].forEach(updateSliderFill);
+
+  speedSlider.addEventListener('input', ()=>{
+    updateSliderFill(speedSlider);
+    speedVal.textContent = speedSlider.value + ' ms';
+  });
+  durSlider.addEventListener('input', ()=>{
+    updateSliderFill(durSlider);
+    durVal.textContent = (durSlider.value/10).toFixed(1) + ' s';
+  });
+
+  function resizeCanvas(){
+    const r = stage.getBoundingClientRect();
+    canvas.width = r.width;
+    canvas.height = r.height;
+    draw();
+  }
+  window.addEventListener('resize', resizeCanvas);
+
+  async function startCamera(){
+    try{
+      if(stream){ stream.getTracks().forEach(t=>t.stop()); }
+      stream = await navigator.mediaDevices.getUserMedia({
+        video:{ facingMode: facingMode, width:{ideal:1280}, height:{ideal:800} },
+        audio:false
+      });
+      video.srcObject = stream;
+      await video.play();
+      cameraOn = true;
+      stageEmpty.style.display = 'none';
+      badgeCount.style.display = 'flex';
+      hintPill.style.display = 'block';
+      switchBtn.disabled = false;
+      camBtn.textContent = '⏹ ปิดกล้อง';
+      camBtn.classList.remove('btn-primary');
+      camBtn.classList.add('btn-danger-outline');
+      stage.classList.toggle('mirror', facingMode === 'user');
+      requestAnimationFrame(resizeCanvas);
+      updateStartEnabled();
+    }catch(err){
+      toast('ไม่สามารถเข้าถึงกล้องได้ กรุณาอนุญาตสิทธิ์การใช้กล้อง');
+    }
+  }
+
+  function stopCamera(){
+    if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
+    cameraOn = false;
+    stageEmpty.style.display = 'flex';
+    badgeCount.style.display = 'none';
+    hintPill.style.display = 'none';
+    switchBtn.disabled = true;
+    camBtn.textContent = '🎥 เปิดกล้อง';
+    camBtn.classList.add('btn-primary');
+    camBtn.classList.remove('btn-danger-outline');
+    updateStartEnabled();
+  }
+
+  camBtn.addEventListener('click', ()=>{
+    if(cameraOn){ stopCamera(); } else { startCamera(); }
+  });
+
+  switchBtn.addEventListener('click', ()=>{
+    facingMode = (facingMode === 'user') ? 'environment' : 'user';
+    markers = [];
+    updateFaceCount();
+    startCamera();
+  });
+
+  function updateStartEnabled(){
+    startBtn.disabled = !(cameraOn && markers.length >= 2);
+    clearBtn.disabled = !(markers.length > 0);
+    if(cameraOn && markers.length === 1){
+      hintPill.textContent = 'ทำเครื่องหมายอย่างน้อย 2 คนเพื่อเริ่มสุ่ม';
+      hintPill.style.display = 'block';
+    } else if(cameraOn && markers.length === 0){
+      hintPill.textContent = 'แตะบนวิดีโอเพื่อทำเครื่องหมายใบหน้า';
+      hintPill.style.display = 'block';
+    } else if(cameraOn){
+      hintPill.style.display = 'none';
+    }
+  }
+
+  function updateFaceCount(){
+    faceCountLbl.textContent = markers.length;
+    updateStartEnabled();
+    draw();
+  }
+
+  clearBtn.addEventListener('click', ()=>{
+    markers = [];
+    updateFaceCount();
+  });
+
+  // ---- marking via click/tap on stage ----
+  function getRelPos(evt){
+    const r = stage.getBoundingClientRect();
+    const clientX = (evt.touches ? evt.touches[0].clientX : evt.clientX);
+    const clientY = (evt.touches ? evt.touches[0].clientY : evt.clientY);
+    return {
+      x: (clientX - r.left) / r.width,
+      y: (clientY - r.top) / r.height
+    };
+  }
+
+  stage.addEventListener('click', (e)=>{
+    if(!cameraOn) return;
+    if(spinTimer) return; // don't allow editing while spinning
+    if(e.target.closest('.reveal') || e.target.closest('.exit-fs')) return;
+    const p = getRelPos(e);
+    // check if clicking near an existing marker -> remove it
+    const r = stage.getBoundingClientRect();
+    const hitRadiusFrac = 34 / Math.min(r.width, r.height);
+    let hitIndex = -1;
+    markers.forEach((m,i)=>{
+      const dx = m.x - p.x, dy = m.y - p.y;
+      if(Math.sqrt(dx*dx+dy*dy) < hitRadiusFrac) hitIndex = i;
+    });
+    if(hitIndex >= 0){
+      markers.splice(hitIndex,1);
+    } else {
+      markers.push({x:p.x, y:p.y});
+    }
+    updateFaceCount();
+  });
+
+  function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    const rad = Math.max(26, Math.min(canvas.width, canvas.height)*0.055);
+    markers.forEach((m,i)=>{
+      const cx = m.x*canvas.width, cy = m.y*canvas.height;
+      const active = (i === highlightIndex);
+      ctx.beginPath();
+      ctx.arc(cx, cy, rad, 0, Math.PI*2);
+      ctx.fillStyle = active ? '#ffb020' : 'rgba(79,209,197,0.22)';
+      ctx.fill();
+      ctx.lineWidth = active ? 4 : 2.5;
+      ctx.strokeStyle = active ? '#fff59d' : '#4fd1c5';
+      ctx.stroke();
+
+      ctx.font = "600 " + Math.round(rad*0.62) + "px Kanit, sans-serif";
+      ctx.fillStyle = active ? '#26170a' : '#0b1220';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(String(i+1), cx, cy+1);
+    });
+  }
+
+  // ---------- random spin ----------
+  function startSpin(){
+    if(markers.length < 2 || !cameraOn) return;
+    reveal.classList.remove('show');
+    startBtn.disabled = true;
+    clearBtn.disabled = true;
+    switchBtn.disabled = true;
+    camBtn.disabled = true;
+
+    const speed = +speedSlider.value;
+    const totalMs = (+durSlider.value) * 100;
+    const startTime = performance.now();
+    let lastIdx = -1;
+
+    function tick(){
+      let idx;
+      do { idx = Math.floor(Math.random()*markers.length); } while(markers.length>1 && idx===lastIdx);
+      lastIdx = idx;
+      highlightIndex = idx;
+      draw();
+      const elapsed = performance.now() - startTime;
+      if(elapsed < totalMs){
+        const progress = elapsed/totalMs;
+        const currentInterval = speed + progress*progress*220; // ease out, slow at the end
+        spinTimer = setTimeout(tick, currentInterval);
+      } else {
+        finishSpin(idx);
+      }
+    }
+    tick();
+  }
+
+  function finishSpin(finalIdx){
+    spinTimer = null;
+    highlightIndex = finalIdx;
+    draw();
+    revealNum.textContent = '#' + (finalIdx+1);
+    revealName.textContent = 'นักเรียนคนที่ ' + (finalIdx+1) + ' ถูกเลือก 🎉';
+    reveal.classList.add('show');
+    camBtn.disabled = false;
+    updateStartEnabled();
+    switchBtn.disabled = false;
+  }
+
+  startBtn.addEventListener('click', startSpin);
+  againBtn.addEventListener('click', ()=>{
+    reveal.classList.remove('show');
+    setTimeout(startSpin, 150);
+  });
+  reveal.addEventListener('click', (e)=>{
+    if(e.target === reveal){ reveal.classList.remove('show'); highlightIndex=-1; draw(); }
+  });
+
+  // ---------- fullscreen ----------
+  function enterFs(){
+    stageWrap.classList.add('fs');
+    app.classList.add('fs-hide-rest');
+    exitFsBtn.style.display = 'block';
+    isFullscreen = true;
+    requestAnimationFrame(resizeCanvas);
+  }
+  function exitFs(){
+    stageWrap.classList.remove('fs');
+    app.classList.remove('fs-hide-rest');
+    exitFsBtn.style.display = 'none';
+    isFullscreen = false;
+    requestAnimationFrame(resizeCanvas);
+  }
+  fsBtn.addEventListener('click', ()=>{ isFullscreen ? exitFs() : enterFs(); });
+  exitFsBtn.addEventListener('click', exitFs);
+  document.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && isFullscreen) exitFs(); });
+
+  // ---------- help modal ----------
+  helpBtn.addEventListener('click', ()=> modalBack.classList.add('show'));
+  closeModal.addEventListener('click', ()=> modalBack.classList.remove('show'));
+  modalBack.addEventListener('click', (e)=>{ if(e.target===modalBack) modalBack.classList.remove('show'); });
+
+  // initial
+  resizeCanvas();
+  updateStartEnabled();
+})();
+</script>
+
+</body>
+</html>
